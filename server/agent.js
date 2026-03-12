@@ -323,7 +323,7 @@ function handleSipgateConnection(ws, req) {
 
         switch (event.type) {
             case 'session_start': {
-                sipgateSessions.set(sessionId, []);
+                sipgateSessions.set(sessionId, [{ role: 'assistant', content: agentConfig.greeting }]);
                 const msg = buildSpeakAction(sessionId, agentConfig.greeting);
                 ws.send(msg);
                 log('action', 'out', { type: 'speak', text: agentConfig.greeting });

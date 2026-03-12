@@ -270,7 +270,7 @@ const barge_in = ${bargeInJson};
 const assistant = AiFlowAssistant.create({
   // Anruf startet: Begruessung senden
   onSessionStart: async (event) => {
-    sessions.set(event.session.id, []);
+    sessions.set(event.session.id, [{ role: "assistant", content: "${greetingStr}" }]);
     return {
       type: "speak",
       session_id: event.session.id,
@@ -370,7 +370,9 @@ const barge_in = ${bargeInJson};
 const assistant = AiFlowAssistant.create({
   // Anruf startet: Begruessung senden + Gemini-Chat-Session anlegen
   onSessionStart: async (event) => {
-    sessions.set(event.session.id, model.startChat());
+    sessions.set(event.session.id, model.startChat({
+      history: [{ role: "model", parts: [{ text: "${greetingStr}" }] }],
+    }));
     return {
       type: "speak",
       session_id: event.session.id,
