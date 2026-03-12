@@ -633,10 +633,11 @@ async function deploy() {
         const wsUrl = `${proto}//${location.host}/ws/sipgate/${AGENT_ID}`;
         els.wsUrl.textContent = wsUrl;
 
-        // Clear chat placeholder
+        // Clear chat placeholder and show greeting
         if (els.chatMessages.querySelector('.chat-placeholder')) {
             els.chatMessages.innerHTML = '';
-            addChatBubble('system', 'Agent deployed. Start chatting!');
+            showGreeting();
+            saveChatHistory();
         }
 
         addLogEntry('system', 'config', 'Agent deployed successfully');
