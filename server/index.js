@@ -531,7 +531,7 @@ finalizeHomepage(homepageApp);
 homepageServer.listen(HOMEPAGE_PORT, () => {
   originalConsole.log(`Homepage server listening on port ${HOMEPAGE_PORT}`);
   if (!WEBAPP_PORT) {
-    originalConsole.log(`sipgate flow WebSocket ready at ws://localhost:${HOMEPAGE_PORT}/ws/sipgate`);
+    originalConsole.log(`sipgate flow WebSocket ready at ws://localhost:${HOMEPAGE_PORT}/ws/sipgate/:agentId`);
   }
 });
 
@@ -543,7 +543,7 @@ if (WEBAPP_PORT) {
   finalizeWebapp(webappApp);
   webappServer.listen(WEBAPP_PORT, () => {
     originalConsole.log(`Webapp server listening on port ${WEBAPP_PORT}`);
-    originalConsole.log(`sipgate flow WebSocket ready at ws://localhost:${WEBAPP_PORT}/ws/sipgate`);
+    originalConsole.log(`sipgate flow WebSocket ready at ws://localhost:${WEBAPP_PORT}/ws/sipgate/:agentId`);
   });
 }
 

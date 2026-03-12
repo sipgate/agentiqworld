@@ -2,19 +2,20 @@
  * Agentiq - sipgate Flow WebSocket Agent
  *
  * Handles:
- * - WebSocket connections from sipgate flow
+ * - WebSocket connections from sipgate flow (per agent ID)
  * - Chat API for the web UI test panel
  * - Configuration management
  * - Log streaming via SSE
  */
 
 const WebSocket = require('ws');
+const crypto = require('crypto');
 
 // ============================================================================
-// State
+// State — per-agent instances keyed by agent ID
 // ============================================================================
 
-let agentConfig = {
+const DEFAULT_CONFIG = {
     systemPrompt: '',
     greeting: 'Hallo, willkommen bei sipgate! Wie kann ich Ihnen helfen?',
     model: 'gemini-2.5-flash',
@@ -28,53 +29,59 @@ let agentConfig = {
     anthropicApiKey: undefined,
 };
 
-let deployed = false;
-const chatHistory = [];
-const sipgateSessions = new Map();
-const logClients = new Set();
+// Map<agentId, { config, deployed, chatHistory, sipgateSessions, logClients }>
+const agents = new Map();
+
+function getOrCreateAgent(agentId) {
+    if (!agents.has(agentId)) {
+        agents.set(agentId, {
+            config: { ...DEFAULT_CONFIG },
+            deployed: false,
+            chatHistory: [],
+            sipgateSessions: new Map(),
+            logClients: new Set(),
+        });
+    }
+    return agents.get(agentId);
+}
 
 // ============================================================================
-// Logging
+// Logging — scoped per agent
 // ============================================================================
 
-function broadcastLog(entry) {
+function broadcastLog(agent, entry) {
     const data = JSON.stringify({ ...entry, timestamp: new Date().toISOString() });
-    for (const client of logClients) {
+    for (const client of agent.logClients) {
         client.write(`data: ${data}\n\n`);
     }
 }
 
-function log(type, direction, detail) {
+function log(agent, type, direction, detail) {
     console.log(`[agent] ${direction} ${type}:`, detail);
-    broadcastLog({ type, direction, detail });
-}
-
-function formatMetrics(m) {
-    return `${m.model} | TTFB ${m.ttfb}ms | Total ${m.total}ms | In ${m.inputTokens} tok | Out ${m.outputTokens} tok | ${m.tokensPerSec} tok/s`;
+    broadcastLog(agent, { type, direction, detail });
 }
 
 // ============================================================================
 // LLM
 // ============================================================================
 
-function getAnthropicKey() {
-    return agentConfig.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
+function getAnthropicKey(config) {
+    return config.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
 }
 
-function getGeminiKey() {
-    return agentConfig.geminiApiKey || process.env.GEMINI_API_KEY;
+function getGeminiKey(config) {
+    return config.geminiApiKey || process.env.GEMINI_API_KEY;
 }
 
-// Returns { text, metrics: { model, provider, ttfb, total, inputTokens, outputTokens, tokensPerSec } }
-async function callLLM(messages) {
-    if (agentConfig.llmProvider === 'gemini') {
-        return callGemini(messages);
+async function callLLM(config, messages) {
+    if (config.llmProvider === 'gemini') {
+        return callGemini(config, messages);
     }
-    return callAnthropic(messages);
+    return callAnthropic(config, messages);
 }
 
-async function callAnthropic(messages) {
-    const apiKey = getAnthropicKey();
+async function callAnthropic(config, messages) {
+    const apiKey = getAnthropicKey(config);
     if (!apiKey) {
         throw new Error('No Anthropic API key. Set ANTHROPIC_API_KEY or enter a key in the UI.');
     }
@@ -93,10 +100,10 @@ async function callAnthropic(messages) {
             'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-            model: agentConfig.model,
+            model: config.model,
             max_tokens: 300,
             stream: true,
-            system: agentConfig.systemPrompt,
+            system: config.systemPrompt,
             messages,
         }),
     });
@@ -106,7 +113,6 @@ async function callAnthropic(messages) {
         throw new Error(`Anthropic API ${response.status}: ${errText}`);
     }
 
-    // Parse SSE stream
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -117,7 +123,7 @@ async function callAnthropic(messages) {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // keep incomplete line
+        buffer = lines.pop();
 
         for (const line of lines) {
             if (!line.startsWith('data: ')) continue;
@@ -149,7 +155,7 @@ async function callAnthropic(messages) {
         text,
         metrics: {
             provider: 'anthropic',
-            model: agentConfig.model,
+            model: config.model,
             ttfb: Math.round(ttfb || total),
             total: Math.round(total),
             inputTokens,
@@ -159,8 +165,8 @@ async function callAnthropic(messages) {
     };
 }
 
-async function callGemini(messages) {
-    const apiKey = getGeminiKey();
+async function callGemini(config, messages) {
+    const apiKey = getGeminiKey(config);
     if (!apiKey) {
         throw new Error('No Gemini API key. Set GEMINI_API_KEY or enter a key in the UI.');
     }
@@ -177,7 +183,7 @@ async function callGemini(messages) {
     let outputTokens = 0;
 
     const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${agentConfig.model}:streamGenerateContent?alt=sse`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:streamGenerateContent?alt=sse`,
         {
             method: 'POST',
             headers: {
@@ -185,8 +191,8 @@ async function callGemini(messages) {
                 'x-goog-api-key': apiKey,
             },
             body: JSON.stringify({
-                system_instruction: agentConfig.systemPrompt
-                    ? { parts: [{ text: agentConfig.systemPrompt }] }
+                system_instruction: config.systemPrompt
+                    ? { parts: [{ text: config.systemPrompt }] }
                     : undefined,
                 contents,
                 generationConfig: {
@@ -201,7 +207,6 @@ async function callGemini(messages) {
         throw new Error(`Gemini API ${response.status}: ${errText}`);
     }
 
-    // Parse SSE stream
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -228,7 +233,6 @@ async function callGemini(messages) {
                 text += partText;
             }
 
-            // Usage metadata comes in the final chunk
             if (chunk.usageMetadata) {
                 inputTokens = chunk.usageMetadata.promptTokenCount || 0;
                 outputTokens = chunk.usageMetadata.candidatesTokenCount || 0;
@@ -247,7 +251,7 @@ async function callGemini(messages) {
         text,
         metrics: {
             provider: 'gemini',
-            model: agentConfig.model,
+            model: config.model,
             ttfb: Math.round(ttfb || total),
             total: Math.round(total),
             inputTokens,
@@ -261,22 +265,22 @@ async function callGemini(messages) {
 // sipgate flow helpers
 // ============================================================================
 
-function getTtsConfig() {
-    if (agentConfig.ttsProvider === 'azure') {
+function getTtsConfig(config) {
+    if (config.ttsProvider === 'azure') {
         return {
             provider: 'azure',
-            language: agentConfig.ttsLanguage,
-            voice: agentConfig.ttsVoice,
+            language: config.ttsLanguage,
+            voice: config.ttsVoice,
         };
     }
     return {
         provider: 'eleven_labs',
-        voice: agentConfig.ttsVoice,
+        voice: config.ttsVoice,
     };
 }
 
-function getBargeInConfig() {
-    switch (agentConfig.bargeIn) {
+function getBargeInConfig(config) {
+    switch (config.bargeIn) {
         case 'none': return { strategy: 'none' };
         case 'manual': return { strategy: 'manual' };
         case 'minimum_characters': return { strategy: 'minimum_characters', minimum_characters: 5 };
@@ -284,14 +288,14 @@ function getBargeInConfig() {
     }
 }
 
-function buildSpeakAction(sessionId, text) {
+function buildSpeakAction(config, sessionId, text) {
     return JSON.stringify({
         type: 'speak',
         session_id: sessionId,
         text,
-        user_input_timeout_seconds: agentConfig.timeout,
-        tts: getTtsConfig(),
-        barge_in: getBargeInConfig(),
+        user_input_timeout_seconds: config.timeout,
+        tts: getTtsConfig(config),
+        barge_in: getBargeInConfig(config),
     });
 }
 
@@ -299,21 +303,22 @@ function buildSpeakAction(sessionId, text) {
 // WebSocket handler for sipgate flow
 // ============================================================================
 
-function handleSipgateConnection(ws, req) {
+function handleSipgateConnection(ws, req, agent) {
+    const config = agent.config;
     const remoteAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    log('connection', 'in', `sipgate flow connected from ${remoteAddr}`);
+    log(agent, 'connection', 'in', `sipgate flow connected from ${remoteAddr}`);
 
     ws.on('message', async (data) => {
         let event;
         try {
             event = JSON.parse(data.toString());
         } catch {
-            log('error', 'system', 'Invalid JSON received');
+            log(agent, 'error', 'system', 'Invalid JSON received');
             return;
         }
 
         const sessionId = event.session?.id;
-        log('event', 'in', {
+        log(agent, 'event', 'in', {
             type: event.type,
             session: sessionId,
             text: event.text,
@@ -323,66 +328,76 @@ function handleSipgateConnection(ws, req) {
 
         switch (event.type) {
             case 'session_start': {
-                sipgateSessions.set(sessionId, [{ role: 'assistant', content: agentConfig.greeting }]);
-                const msg = buildSpeakAction(sessionId, agentConfig.greeting);
+                agent.sipgateSessions.set(sessionId, [{ role: 'assistant', content: config.greeting }]);
+                const msg = buildSpeakAction(config, sessionId, config.greeting);
                 ws.send(msg);
-                log('action', 'out', { type: 'speak', text: agentConfig.greeting });
+                log(agent, 'action', 'out', { type: 'speak', text: config.greeting });
                 break;
             }
 
             case 'user_speak': {
-                const history = sipgateSessions.get(sessionId) || [];
+                const history = agent.sipgateSessions.get(sessionId) || [];
                 history.push({ role: 'user', content: event.text });
 
                 try {
-                    const { text: reply, metrics } = await callLLM(history);
+                    const { text: reply, metrics } = await callLLM(config, history);
                     history.push({ role: 'assistant', content: reply });
-                    ws.send(buildSpeakAction(sessionId, reply));
-                    log('action', 'out', { type: 'speak', text: reply });
-                    log('metrics', 'system', metrics);
+                    ws.send(buildSpeakAction(config, sessionId, reply));
+                    log(agent, 'action', 'out', { type: 'speak', text: reply });
+                    log(agent, 'metrics', 'system', metrics);
                 } catch (err) {
-                    log('error', 'system', err.message);
-                    ws.send(buildSpeakAction(sessionId, 'Entschuldigung, es ist ein technischer Fehler aufgetreten. Bitte versuchen Sie es erneut.'));
+                    log(agent, 'error', 'system', err.message);
+                    ws.send(buildSpeakAction(config, sessionId, 'Entschuldigung, es ist ein technischer Fehler aufgetreten. Bitte versuchen Sie es erneut.'));
                 }
                 break;
             }
 
             case 'user_speech_started':
-                log('event', 'in', { type: 'user_speech_started' });
+                log(agent, 'event', 'in', { type: 'user_speech_started' });
                 break;
 
             case 'assistant_speak':
-                log('event', 'in', { type: 'assistant_speak' });
+                log(agent, 'event', 'in', { type: 'assistant_speak' });
                 break;
 
             case 'assistant_speech_ended':
-                log('event', 'in', { type: 'assistant_speech_ended' });
+                log(agent, 'event', 'in', { type: 'assistant_speech_ended' });
                 break;
 
             case 'user_input_timeout': {
-                ws.send(buildSpeakAction(sessionId, 'Sind Sie noch da? Kann ich Ihnen noch weiterhelfen?'));
-                log('action', 'out', { type: 'speak', text: 'Timeout prompt sent' });
+                ws.send(buildSpeakAction(config, sessionId, 'Sind Sie noch da? Kann ich Ihnen noch weiterhelfen?'));
+                log(agent, 'action', 'out', { type: 'speak', text: 'Timeout prompt sent' });
                 break;
             }
 
             case 'session_end': {
-                sipgateSessions.delete(sessionId);
-                log('connection', 'system', `Session ${sessionId} ended`);
+                agent.sipgateSessions.delete(sessionId);
+                log(agent, 'connection', 'system', `Session ${sessionId} ended`);
                 break;
             }
 
             default:
-                log('event', 'in', { type: event.type });
+                log(agent, 'event', 'in', { type: event.type });
         }
     });
 
     ws.on('close', () => {
-        log('connection', 'system', 'sipgate flow disconnected');
+        log(agent, 'connection', 'system', 'sipgate flow disconnected');
     });
 
     ws.on('error', (err) => {
-        log('error', 'system', err.message);
+        log(agent, 'error', 'system', err.message);
     });
+}
+
+// ============================================================================
+// Agent ID validation
+// ============================================================================
+
+const AGENT_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+
+function isValidAgentId(id) {
+    return typeof id === 'string' && AGENT_ID_RE.test(id);
 }
 
 // ============================================================================
@@ -390,9 +405,28 @@ function handleSipgateConnection(ws, req) {
 // ============================================================================
 
 function setupAgent(app, server) {
-    // WebSocket server for sipgate flow
-    const wss = new WebSocket.Server({ server, path: '/ws/sipgate' });
-    wss.on('connection', handleSipgateConnection);
+    // WebSocket server — noServer mode so we can route by path
+    const wss = new WebSocket.Server({ noServer: true });
+
+    server.on('upgrade', (req, socket, head) => {
+        const match = req.url.match(/^\/ws\/sipgate\/([a-zA-Z0-9_-]+)$/);
+        if (!match) {
+            // Not our path — let other handlers deal with it or reject
+            socket.destroy();
+            return;
+        }
+
+        const agentId = match[1];
+        const agent = agents.get(agentId);
+        if (!agent || !agent.deployed) {
+            socket.destroy();
+            return;
+        }
+
+        wss.handleUpgrade(req, socket, head, (ws) => {
+            handleSipgateConnection(ws, req, agent);
+        });
+    });
 
     // API: Which LLM keys are configured server-side?
     app.get('/api/agent/keys', (req, res) => {
@@ -403,25 +437,39 @@ function setupAgent(app, server) {
     });
 
     // API: Update agent config
-    app.post('/api/agent/config', (req, res) => {
+    app.post('/api/agent/:id/config', (req, res) => {
+        const { id } = req.params;
+        if (!isValidAgentId(id)) return res.status(400).json({ error: 'Invalid agent ID' });
+
         const body = req.body;
         if (!body) return res.status(400).json({ error: 'Body required' });
 
-        agentConfig = { ...agentConfig, ...body };
-        deployed = true;
-        log('config', 'system', 'Agent configuration updated');
+        const agent = getOrCreateAgent(id);
+        agent.config = { ...agent.config, ...body };
+        agent.deployed = true;
+        log(agent, 'config', 'system', 'Agent configuration updated');
         res.json({ success: true });
     });
 
     // API: Get agent config
-    app.get('/api/agent/config', (req, res) => {
-        const { geminiApiKey, anthropicApiKey, ...safeConfig } = agentConfig;
-        res.json({ config: safeConfig, deployed });
+    app.get('/api/agent/:id/config', (req, res) => {
+        const { id } = req.params;
+        if (!isValidAgentId(id)) return res.status(400).json({ error: 'Invalid agent ID' });
+
+        const agent = agents.get(id);
+        if (!agent) return res.json({ config: null, deployed: false });
+
+        const { geminiApiKey, anthropicApiKey, ...safeConfig } = agent.config;
+        res.json({ config: safeConfig, deployed: agent.deployed });
     });
 
     // API: Chat (test the agent from the UI)
-    app.post('/api/agent/chat', async (req, res) => {
-        if (!deployed) {
+    app.post('/api/agent/:id/chat', async (req, res) => {
+        const { id } = req.params;
+        if (!isValidAgentId(id)) return res.status(400).json({ error: 'Invalid agent ID' });
+
+        const agent = agents.get(id);
+        if (!agent || !agent.deployed) {
             return res.status(400).json({ error: 'Agent not deployed. Click "Deploy Agent" first.' });
         }
 
@@ -430,37 +478,48 @@ function setupAgent(app, server) {
             return res.status(400).json({ error: 'Message required' });
         }
 
-        chatHistory.push({ role: 'user', content: message });
-        log('chat', 'in', { text: message });
+        agent.chatHistory.push({ role: 'user', content: message });
+        log(agent, 'chat', 'in', { text: message });
 
         try {
-            const { text: reply, metrics } = await callLLM(chatHistory);
-            chatHistory.push({ role: 'assistant', content: reply });
-            log('chat', 'out', { text: reply });
-            log('metrics', 'system', metrics);
+            const { text: reply, metrics } = await callLLM(agent.config, agent.chatHistory);
+            agent.chatHistory.push({ role: 'assistant', content: reply });
+            log(agent, 'chat', 'out', { text: reply });
+            log(agent, 'metrics', 'system', metrics);
             res.json({ reply, metrics });
         } catch (err) {
-            log('error', 'system', err.message);
+            log(agent, 'error', 'system', err.message);
             res.status(500).json({ error: err.message });
         }
     });
 
     // API: Reset chat history
-    app.post('/api/agent/chat/reset', (req, res) => {
-        chatHistory.length = 0;
-        log('chat', 'system', 'Chat history cleared');
+    app.post('/api/agent/:id/chat/reset', (req, res) => {
+        const { id } = req.params;
+        if (!isValidAgentId(id)) return res.status(400).json({ error: 'Invalid agent ID' });
+
+        const agent = agents.get(id);
+        if (agent) {
+            agent.chatHistory.length = 0;
+            log(agent, 'chat', 'system', 'Chat history cleared');
+        }
         res.json({ success: true });
     });
 
     // API: Log stream (SSE)
-    app.get('/api/agent/logs', (req, res) => {
+    app.get('/api/agent/:id/logs', (req, res) => {
+        const { id } = req.params;
+        if (!isValidAgentId(id)) return res.status(400).json({ error: 'Invalid agent ID' });
+
+        const agent = getOrCreateAgent(id);
+
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('X-Accel-Buffering', 'no');
         res.write(`data: ${JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() })}\n\n`);
 
-        logClients.add(res);
+        agent.logClients.add(res);
 
         const ping = setInterval(() => {
             res.write(`data: ${JSON.stringify({ type: 'ping' })}\n\n`);
@@ -468,11 +527,11 @@ function setupAgent(app, server) {
 
         req.on('close', () => {
             clearInterval(ping);
-            logClients.delete(res);
+            agent.logClients.delete(res);
         });
     });
 
-    console.log('[agent] WebSocket server ready at /ws/sipgate');
+    console.log('[agent] WebSocket server ready at /ws/sipgate/:agentId');
     return wss;
 }
 

@@ -4,6 +4,22 @@
  */
 
 // ============================================================================
+// Agent ID — unique per browser, stored in localStorage
+// ============================================================================
+
+function getAgentId() {
+    const KEY = 'agentiq-agent-id';
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(KEY, id);
+    }
+    return id;
+}
+
+const AGENT_ID = getAgentId();
+
+// ============================================================================
 // Agent templates
 // ============================================================================
 
@@ -514,7 +530,7 @@ async function deploy() {
     els.deployBtn.textContent = 'Deploying...';
 
     try {
-        const res = await fetch('/api/agent/config', {
+        const res = await fetch(`/api/agent/${AGENT_ID}/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(config)
@@ -539,7 +555,7 @@ async function deploy() {
 
         // Show WebSocket URL
         const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${proto}//${location.host}/ws/sipgate`;
+        const wsUrl = `${proto}//${location.host}/ws/sipgate/${AGENT_ID}`;
         els.wsUrl.textContent = wsUrl;
 
         // Clear chat placeholder
@@ -581,7 +597,7 @@ async function sendChat(message) {
     scrollChat();
 
     try {
-        const res = await fetch('/api/agent/chat', {
+        const res = await fetch(`/api/agent/${AGENT_ID}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
@@ -623,7 +639,7 @@ function clearChat() {
     els.chatMessages.innerHTML = '';
     if (deployed) {
         addChatBubble('system', 'Chat cleared.');
-        fetch('/api/agent/chat/reset', { method: 'POST' });
+        fetch(`/api/agent/${AGENT_ID}/chat/reset`, { method: 'POST' });
     } else {
         els.chatMessages.innerHTML = '<div class="chat-placeholder">Configure and deploy your agent to start chatting.</div>';
     }
@@ -639,7 +655,7 @@ function connectLogStream() {
         logSource.close();
     }
 
-    logSource = new EventSource('/api/agent/logs');
+    logSource = new EventSource(`/api/agent/${AGENT_ID}/logs`);
 
     logSource.onmessage = (event) => {
         try {
@@ -944,7 +960,7 @@ async function init() {
 
     // Restore deployed state from server
     try {
-        const res = await fetch('/api/agent/config');
+        const res = await fetch(`/api/agent/${AGENT_ID}/config`);
         if (res.ok) {
             const { deployed: isDeployed } = await res.json();
             if (isDeployed) {
@@ -957,7 +973,7 @@ async function init() {
                 els.chatInput.disabled = false;
                 els.chatSend.disabled = false;
                 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-                els.wsUrl.textContent = `${proto}//${location.host}/ws/sipgate`;
+                els.wsUrl.textContent = `${proto}//${location.host}/ws/sipgate/${AGENT_ID}`;
                 connectLogStream();
             }
         }
