@@ -83,6 +83,74 @@ const TEMPLATES = [
 ];
 
 // ============================================================================
+// LLM model definitions
+// ============================================================================
+
+const LLM_MODELS = {
+    gemini: {
+        label: 'Google Gemini',
+        models: [
+            { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+            { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+        ],
+    },
+    anthropic: {
+        label: 'Anthropic Claude',
+        models: [
+            { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
+            { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+        ],
+    },
+};
+
+// Track which providers have keys available (updated in init)
+let serverKeys = { gemini: false, anthropic: false };
+let availableProviders = { gemini: false, anthropic: false };
+
+function populateModelDropdown() {
+    const select = els.llmModel;
+    const currentValue = select.value;
+    select.innerHTML = '';
+
+    let firstValue = null;
+    for (const [provider, def] of Object.entries(LLM_MODELS)) {
+        if (!availableProviders[provider]) continue;
+        const group = document.createElement('optgroup');
+        group.label = def.label;
+        for (const model of def.models) {
+            const opt = document.createElement('option');
+            opt.value = model.value;
+            opt.textContent = model.label;
+            group.appendChild(opt);
+            if (!firstValue) firstValue = model.value;
+        }
+        select.appendChild(group);
+    }
+
+    // Restore previous selection if still available, otherwise use first
+    if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+        select.value = currentValue;
+    } else if (firstValue) {
+        select.value = firstValue;
+    }
+}
+
+function getProviderForModel(model) {
+    return model.startsWith('gemini') ? 'gemini' : 'anthropic';
+}
+
+function getFallbackModel(preferredModel) {
+    const provider = getProviderForModel(preferredModel);
+    if (availableProviders[provider]) return preferredModel;
+
+    // Find first available provider and return its first model
+    for (const [p, def] of Object.entries(LLM_MODELS)) {
+        if (availableProviders[p]) return def.models[0].value;
+    }
+    return preferredModel; // no keys at all, keep original
+}
+
+// ============================================================================
 // Voice definitions
 // ============================================================================
 
@@ -162,7 +230,8 @@ function applyTemplate(templateId) {
     els.greeting.value = c.greeting;
     els.bargeIn.value = c.bargeIn;
     els.timeout.value = c.timeout;
-    els.llmModel.value = c.llmModel;
+    const resolvedModel = getFallbackModel(c.llmModel);
+    els.llmModel.value = resolvedModel;
 
     // Set TTS provider first, then update voice dropdown, then set voice
     els.ttsProvider.value = c.ttsProvider;
@@ -171,7 +240,13 @@ function applyTemplate(templateId) {
 
     updateCodePreview();
     saveSettings();
-    toast(`Template "${template.name}" geladen`, 'success');
+
+    if (resolvedModel !== c.llmModel) {
+        const fallbackLabel = Object.values(LLM_MODELS).flatMap(d => d.models).find(m => m.value === resolvedModel)?.label || resolvedModel;
+        toast(`Template "${template.name}" geladen (Fallback: ${fallbackLabel})`, 'success');
+    } else {
+        toast(`Template "${template.name}" geladen`, 'success');
+    }
 }
 
 // ============================================================================
@@ -635,10 +710,17 @@ function scrollChat() {
     els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
 }
 
+function showGreeting() {
+    const greeting = els.greeting.value;
+    if (greeting) {
+        addChatBubble('assistant', greeting, false);
+    }
+}
+
 function clearChat() {
     els.chatMessages.innerHTML = '';
     if (deployed) {
-        addChatBubble('system', 'Chat cleared.');
+        showGreeting();
         fetch(`/api/agent/${AGENT_ID}/chat/reset`, { method: 'POST' });
     } else {
         els.chatMessages.innerHTML = '<div class="chat-placeholder">Configure and deploy your agent to start chatting.</div>';
@@ -944,11 +1026,21 @@ async function init() {
     loadChatHistory();
     loadLogHistory();
 
-    // Hide API key fields when server keys are configured
+    // Stash saved model before dropdown gets populated
+    const savedModel = localStorage.getItem(STORAGE_KEY)
+        ? JSON.parse(localStorage.getItem(STORAGE_KEY))?.llmModel
+        : null;
+
+    // Check which API keys are configured and populate model dropdown
     try {
         const res = await fetch('/api/agent/keys');
         if (res.ok) {
             const keys = await res.json();
+            serverKeys = { gemini: keys.gemini, anthropic: keys.anthropic };
+            availableProviders = {
+                gemini: keys.gemini || !!els.geminiApiKey.value,
+                anthropic: keys.anthropic || !!els.anthropicApiKey.value,
+            };
             if (keys.gemini) {
                 els.geminiApiKey.closest('.form-group').style.display = 'none';
             }
@@ -957,6 +1049,15 @@ async function init() {
             }
         }
     } catch {}
+    populateModelDropdown();
+
+    // Restore saved model selection (with fallback if provider unavailable)
+    if (savedModel) {
+        const resolved = getFallbackModel(savedModel);
+        if (els.llmModel.querySelector(`option[value="${resolved}"]`)) {
+            els.llmModel.value = resolved;
+        }
+    }
 
     // Restore deployed state from server
     try {
@@ -975,6 +1076,12 @@ async function init() {
                 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
                 els.wsUrl.textContent = `${proto}//${location.host}/ws/sipgate/${AGENT_ID}`;
                 connectLogStream();
+
+                // Show greeting if chat is empty (new or cleared)
+                if (!els.chatMessages.querySelector('.chat-bubble')) {
+                    showGreeting();
+                    saveChatHistory();
+                }
             }
         }
     } catch {}
@@ -993,6 +1100,16 @@ async function init() {
     });
 
     els.ttsProvider.addEventListener('change', updateVoiceOptions);
+
+    // When user enters/clears API key, update available models
+    els.geminiApiKey.addEventListener('input', () => {
+        availableProviders.gemini = serverKeys.gemini || !!els.geminiApiKey.value;
+        populateModelDropdown();
+    });
+    els.anthropicApiKey.addEventListener('input', () => {
+        availableProviders.anthropic = serverKeys.anthropic || !!els.anthropicApiKey.value;
+        populateModelDropdown();
+    });
 
     // Template selector
     els.templateSelect.addEventListener('change', () => {
