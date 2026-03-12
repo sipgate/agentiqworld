@@ -109,6 +109,7 @@ html, body {
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
+    min-height: 36px;
     background: var(--bg-header);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
