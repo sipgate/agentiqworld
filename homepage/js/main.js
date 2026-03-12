@@ -5,10 +5,10 @@
 
 // Service configuration
 const SERVICES = {
-    homepage: { url: 'http://localhost:3000', healthPath: '/health' },
-    webapp: { url: 'http://localhost:3001', healthPath: '/health' },
-    admin: { url: 'http://localhost:3002', healthPath: '/health' },
-    pocketbase: { url: 'http://localhost:8090', healthPath: '/api/health' }
+    homepage: { url: '', healthPath: '/health' },
+    webapp: { url: '', healthPath: '/app/health' },
+    admin: { url: '', healthPath: '/admin/health' },
+    pocketbase: { url: '', healthPath: '/pb/api/health' }
 };
 
 /**
