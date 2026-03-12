@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentiq Workshop</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <h1>Agentiq Workshop</h1>
+            <span class="badge" id="status-badge">Offline</span>
+        </div>
+        <div class="top-bar-right">
+            <span class="connection-info" id="connection-info"></span>
+        </div>
+    </header>
+
+    <div class="grid-layout">
+        <!-- Top Left: Settings -->
+        <section class="panel panel-settings">
+            <div class="panel-header">
+                <h2>Agent Configuration</h2>
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label for="template-select">Template</label>
+                    <select id="template-select">
+                        <option value="">— Vorlage wählen —</option>
+                        <option value="kundenservice">Kundenservice</option>
+                        <option value="terminvereinbarung">Terminvereinbarung</option>
+                        <option value="bestellhotline">Bestellhotline</option>
+                        <option value="techsupport">Technischer Support</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="system-prompt">System Prompt</label>
+                    <textarea id="system-prompt" rows="5" placeholder="Du bist ein freundlicher Kundenservice-Mitarbeiter bei sipgate. Du hilfst Kunden bei Fragen zu ihrem Telefonanschluss..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="greeting">Greeting</label>
+                    <input type="text" id="greeting" value="Hallo, willkommen bei sipgate! Wie kann ich Ihnen helfen?">
+                </div>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="tts-provider">TTS Provider</label>
+                        <select id="tts-provider">
+                            <option value="azure">Azure</option>
+                            <option value="eleven_labs">ElevenLabs</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tts-voice">Voice</label>
+                        <select id="tts-voice"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="barge-in">Barge-In</label>
+                        <select id="barge-in">
+                            <option value="immediate">Immediate</option>
+                            <option value="minimum_characters">Min Characters</option>
+                            <option value="manual">Manual</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeout">Timeout (s)</label>
+                        <input type="number" id="timeout" value="8" min="1" max="30">
+                    </div>
+                    <div class="form-group">
+                        <label for="llm-model">LLM Model</label>
+                        <select id="llm-model">
+                            <optgroup label="Google Gemini">
+                                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                            </optgroup>
+                            <optgroup label="Anthropic Claude">
+                                <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="gemini-api-key">Gemini API Key</label>
+                        <input type="password" id="gemini-api-key" placeholder="AIza... (optional, uses server key)">
+                    </div>
+                    <div class="form-group">
+                        <label for="anthropic-api-key">Anthropic API Key</label>
+                        <input type="password" id="anthropic-api-key" placeholder="sk-ant-... (optional, uses server key)">
+                    </div>
+                </div>
+                <button id="deploy-btn" class="btn btn-deploy">Deploy Agent</button>
+            </div>
+        </section>
+
+        <!-- Top Right: Chat -->
+        <section class="panel panel-chat">
+            <div class="panel-header">
+                <h2>Chat</h2>
+                <button id="clear-chat" class="btn-sm">Clear</button>
+            </div>
+            <div class="panel-body panel-body-chat">
+                <div id="chat-messages" class="chat-messages">
+                    <div class="chat-placeholder">Configure and deploy your agent to start chatting.</div>
+                </div>
+                <form id="chat-form" class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Type a message..." disabled>
+                    <button type="submit" id="chat-send" class="btn btn-send" disabled>Send</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Bottom Left: Code -->
+        <section class="panel panel-code">
+            <div class="panel-header">
+                <h2>Generated Code</h2>
+                <button id="copy-code" class="btn-sm">Copy</button>
+            </div>
+            <div class="panel-body panel-body-code">
+                <pre id="code-preview"><code id="code-content">// Configure your agent to see the generated code...</code></pre>
+            </div>
+        </section>
+
+        <!-- Bottom Right: Logs -->
+        <section class="panel panel-logs">
+            <div class="panel-header">
+                <h2>Logs</h2>
+                <label class="auto-scroll-label">
+                    <input type="checkbox" id="auto-scroll" checked>
+                    Auto-scroll
+                </label>
+                <button id="clear-logs" class="btn-sm">Clear</button>
+            </div>
+            <div class="panel-body panel-body-logs">
+                <div id="webhook-url" class="url-bar">
+                    <span class="url-label">WebSocket URL</span>
+                    <code id="ws-url">Deploy agent to get URL</code>
+                    <button id="copy-url" class="btn-sm">Copy</button>
+                </div>
+                <div id="log-entries" class="log-entries">
+                    <div class="log-placeholder">No events yet. Deploy your agent and connect sipgate flow.</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

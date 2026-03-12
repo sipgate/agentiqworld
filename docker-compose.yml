@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=${NODE_ENV:-development}
+    ports:
+      # External:Internal - external ports configurable, internal fixed
+      - "${HOMEPAGE_PORT:-3000}:3000"
+      - "${WEBAPP_PORT:-3001}:3001"
+      - "${ADMIN_PORT:-3002}:3002"
+      - "${POCKETBASE_PORT:-8090}:8090"
+    volumes:
+      # Static files (hot-reload)
+      - ./homepage:/app/homepage
+      - ./webapp:/app/webapp
+      - ./admin:/app/admin
+      # Server code (hot-reload via node --watch)
+      - ./server:/app/server
+      # Preserve node_modules (prevents mount from overwriting installed modules)
+      - server_node_modules:/app/server/node_modules
+      # PocketBase hooks and migrations
+      - ./api/pb_hooks:/pb/pb_hooks
+      - ./api/pb_migrations:/pb/pb_migrations
+      # Persistent data
+      - pb_data:/pb/pb_data
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - HOMEPAGE_PORT=3000
+      # Dev: separate ports for webapp/admin (override Dockerfile defaults)
+      - WEBAPP_PORT=3001
+      - ADMIN_PORT=3002
+      - API_URL=http://localhost:8090
+      # Host ports for display in logs (so users see the correct URLs)
+      - HOST_HOMEPAGE_PORT=${HOMEPAGE_PORT:-3000}
+      - HOST_WEBAPP_PORT=${WEBAPP_PORT:-3001}
+      - HOST_ADMIN_PORT=${ADMIN_PORT:-3002}
+      - HOST_POCKETBASE_PORT=${POCKETBASE_PORT:-8090}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: wget -q --spider http://localhost:3000/health && wget -q --spider http://localhost:8090/api/health || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  pb_data:
+  server_node_modules:

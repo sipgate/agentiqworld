@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "pocketbase": {
+      "command": "./run-pocketbase-mcp.sh",
+      "args": [],
+      "env": {
+        "POCKETBASE_API_URL": "http://localhost:8090"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "stellarmcp": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://stellarmcp.com/mcp"]
+    }
+  }
+}

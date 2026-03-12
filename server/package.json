@@ -1,0 +1,17 @@
+{
+  "name": "project-web",
+  "version": "1.0.0",
+  "description": "Node.js Express servers for homepage, webapp, and admin dashboard",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

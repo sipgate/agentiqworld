@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Project Name</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth check -->
+        <div id="auth-loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+
+        <!-- Login prompt (shown when not authenticated) -->
+        <div id="login-view" class="auth-container" style="display: none;">
+            <div class="auth-card">
+                <h1>Admin Dashboard</h1>
+                <p class="subtitle">Sign in with your PocketBase admin account</p>
+
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Admin Email</label>
+                        <input type="email" id="email" name="email" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required autocomplete="current-password">
+                    </div>
+                    <div id="login-error" class="error-message" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                </form>
+
+                <div class="auth-footer">
+                    <a href="/" target="_blank">Back to Homepage</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard (shown when authenticated) -->
+        <div id="dashboard-view" style="display: none;">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <h1>Admin Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <span id="admin-email" class="admin-info"></span>
+                    <a id="pb-admin-link" href="/_/" target="_blank" class="btn btn-secondary">PocketBase Admin</a>
+                    <button id="logout-btn" class="btn btn-secondary">Sign Out</button>
+                </div>
+            </header>
+
+            <main class="dashboard-main">
+                <div class="dashboard-grid">
+                    <!-- System Health Card -->
+                    <div class="card card-wide">
+                        <div class="card-header">
+                            <h2>System Health</h2>
+                            <button id="refresh-system" class="btn btn-sm">Refresh</button>
+                        </div>
+                        <div class="card-content">
+                            <div class="metrics-grid">
+                                <div class="metric">
+                                    <span class="metric-label">App Memory</span>
+                                    <span id="memory-usage" class="metric-value">--</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Heap Used</span>
+                                    <span id="heap-usage" class="metric-value">--</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">App Uptime</span>
+                                    <span id="uptime" class="metric-value">--</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">CPU Cores</span>
+                                    <span id="cpu-cores" class="metric-value">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Request Analytics Card -->
+                    <div class="card card-wide">
+                        <div class="card-header">
+                            <h2>Request Analytics</h2>
+                            <div class="card-actions">
+                                <select id="analytics-period" class="select-sm">
+                                    <option value="5m">Last 5 min</option>
+                                    <option value="15m">Last 15 min</option>
+                                    <option value="1h" selected>Last hour</option>
+                                    <option value="24h">Last 24h</option>
+                                </select>
+                                <button id="refresh-analytics" class="btn btn-sm">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div class="analytics-summary">
+                                <div class="analytics-stat">
+                                    <span class="analytics-value" id="analytics-total">--</span>
+                                    <span class="analytics-label">Total Requests</span>
+                                </div>
+                                <div class="analytics-stat">
+                                    <span class="analytics-value" id="analytics-rpm">--</span>
+                                    <span class="analytics-label">Req/min</span>
+                                </div>
+                                <div class="analytics-stat">
+                                    <span class="analytics-value" id="analytics-avg-time">--</span>
+                                    <span class="analytics-label">Avg Response</span>
+                                </div>
+                                <div class="analytics-stat">
+                                    <span class="analytics-value" id="analytics-error-rate">--</span>
+                                    <span class="analytics-label">Error Rate</span>
+                                </div>
+                            </div>
+                            <div class="analytics-chart">
+                                <div id="analytics-timeline" class="timeline-chart"></div>
+                            </div>
+                            <div class="status-distribution" id="status-distribution"></div>
+                        </div>
+                    </div>
+
+                    <!-- Services Status Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Services</h2>
+                            <button id="refresh-services" class="btn btn-sm">Refresh</button>
+                        </div>
+                        <div class="card-content">
+                            <div id="services-list" class="services-list">
+                                <p class="placeholder">Loading services...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collections Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Collections</h2>
+                            <button id="refresh-collections" class="btn btn-sm">Refresh</button>
+                        </div>
+                        <div class="card-content">
+                            <div id="collections-list" class="collections-list">
+                                <p class="placeholder">Loading collections...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Environment Info Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Environment</h2>
+                            <button id="refresh-environment" class="btn btn-sm">Refresh</button>
+                        </div>
+                        <div class="card-content">
+                            <div id="environment-info" class="environment-info">
+                                <p class="placeholder">Loading environment...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backups Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Backups</h2>
+                            <div class="card-actions">
+                                <button id="create-backup" class="btn btn-sm btn-primary">Create Backup</button>
+                                <button id="refresh-backups" class="btn btn-sm">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div id="backups-list" class="backups-list">
+                                <p class="placeholder">Loading backups...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Logs Card -->
+                    <div class="card card-wide">
+                        <div class="card-header">
+                            <h2>Live Logs</h2>
+                            <div class="card-actions">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="logs-stream-toggle">
+                                    <span>Stream</span>
+                                </label>
+                                <button id="clear-logs" class="btn btn-sm">Clear</button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <div id="live-logs" class="live-logs">
+                                <p class="placeholder">Enable streaming to see live logs...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Requests Card -->
+                    <div class="card card-wide">
+                        <div class="card-header">
+                            <h2>Recent Requests</h2>
+                            <button id="refresh-logs" class="btn btn-sm">Refresh</button>
+                        </div>
+                        <div class="card-content">
+                            <div id="logs-container" class="logs-container">
+                                <p class="placeholder">Loading logs...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- PocketBase JS SDK for admin auth -->
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.26.8/dist/pocketbase.umd.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
