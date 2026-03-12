@@ -84,10 +84,17 @@ html, body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+        "settings chat"
+        "settings logs";
     height: calc(100vh - 48px);
     gap: 1px;
     background: var(--border);
 }
+
+.panel-settings { grid-area: settings; }
+.panel-chat { grid-area: chat; }
+.panel-logs { grid-area: logs; }
 
 /* Panels */
 .panel {
@@ -341,10 +348,48 @@ html, body {
     opacity: 0.5;
 }
 
-/* Code Panel */
+/* Collapsible Code Panel (inside settings) */
+.code-details {
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.code-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg-header);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    user-select: none;
+    list-style: none;
+}
+
+.code-summary::-webkit-details-marker { display: none; }
+
+.code-summary span::before {
+    content: '\25B6';
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 9px;
+    transition: transform 0.15s;
+}
+
+.code-details[open] .code-summary span::before {
+    transform: rotate(90deg);
+}
+
 .panel-body-code {
     padding: 0;
     overflow: auto;
+    max-height: 300px;
 }
 
 #code-preview {
@@ -357,7 +402,6 @@ html, body {
     color: var(--text);
     white-space: pre;
     overflow-x: auto;
-    min-height: 100%;
     tab-size: 2;
 }
 
