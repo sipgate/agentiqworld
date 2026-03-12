@@ -942,6 +942,27 @@ async function init() {
         }
     } catch {}
 
+    // Restore deployed state from server
+    try {
+        const res = await fetch('/api/agent/config');
+        if (res.ok) {
+            const { deployed: isDeployed } = await res.json();
+            if (isDeployed) {
+                deployed = true;
+                chatEnabled = true;
+                els.deployBtn.textContent = 'Re-Deploy Agent';
+                els.deployBtn.classList.add('deployed');
+                els.statusBadge.textContent = 'Live';
+                els.statusBadge.classList.add('active');
+                els.chatInput.disabled = false;
+                els.chatSend.disabled = false;
+                const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                els.wsUrl.textContent = `${proto}//${location.host}/ws/sipgate`;
+                connectLogStream();
+            }
+        }
+    } catch {}
+
 
     // Settings changes update code preview + save to localStorage
     const settingsInputs = [
