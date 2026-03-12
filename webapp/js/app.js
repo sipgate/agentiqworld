@@ -1,6 +1,6 @@
 /**
  * Agentiq Workshop - Frontend Application
- * 4-Panel demo for sipgate AI Flow WebSocket integration
+ * 4-Panel demo for sipgate Flow WebSocket integration
  */
 
 // ============================================================================
@@ -283,7 +283,7 @@ function generateCode() {
 
 function generateAnthropicCode(c, ttsJson, bargeInJson, promptStr, greetingStr) {
     return `// -------------------------------------------------------
-// sipgate AI Flow Agent — Anthropic Claude
+// sipgate Flow Agent — Anthropic Claude
 // -------------------------------------------------------
 // Voraussetzungen:
 //   npm install @sipgate/ai-flow-sdk @anthropic-ai/sdk ws
@@ -381,7 +381,7 @@ console.log("Agent running on ws://localhost:8080");`;
 
 function generateGeminiCode(c, ttsJson, bargeInJson, promptStr, greetingStr) {
     return `// -------------------------------------------------------
-// sipgate AI Flow Agent — Google Gemini
+// sipgate Flow Agent — Google Gemini
 // -------------------------------------------------------
 // Voraussetzungen:
 //   npm install @sipgate/ai-flow-sdk @google/generative-ai ws

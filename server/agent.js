@@ -1,5 +1,5 @@
 /**
- * Agentiq - sipgate AI Flow WebSocket Agent
+ * Agentiq - sipgate Flow WebSocket Agent
  *
  * Handles:
  * - WebSocket connections from sipgate flow

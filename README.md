@@ -1,10 +1,10 @@
-# Agentiq World — sipgate AI Flow Workshop
+# Agentiq World — sipgate Flow Workshop
 
 Workshop-Tool for the sipgate session **"Turning Chatbots into Phonebots (Without Breaking Everything)"** at Agentiq World Berlin 2026.
 
 ## What is this?
 
-A web-based agent configurator that lets you build and deploy a voice AI agent powered by sipgate AI Flow. Configure your LLM, system prompt, TTS voice, and barge-in behavior — then connect it to a real phone number via WebSocket.
+A web-based agent configurator that lets you build and deploy a voice AI agent powered by sipgate Flow. Configure your LLM, system prompt, TTS voice, and barge-in behavior — then connect it to a real phone number via WebSocket.
 
 ## Live
 
@@ -41,6 +41,6 @@ Production uses single-port path-based routing. Development uses separate ports.
 - **Frontend:** Static HTML/CSS/JS
 - **Backend:** Node.js Express + PocketBase
 - **LLM:** Anthropic Claude / Google Gemini (configurable)
-- **Voice:** sipgate AI Flow (WebSocket)
+- **Voice:** sipgate Flow (WebSocket)
 - **TTS:** Azure / ElevenLabs (configurable)
 - **Deployment:** Docker on Railway
