@@ -447,6 +447,10 @@ function setupAgent(app, server) {
         const agent = getOrCreateAgent(id);
         agent.config = { ...agent.config, ...body };
         agent.deployed = true;
+        // Initialize chat history with greeting so the LLM has context
+        agent.chatHistory = agent.config.greeting
+            ? [{ role: 'assistant', content: agent.config.greeting }]
+            : [];
         log(agent, 'config', 'system', 'Agent configuration updated');
         res.json({ success: true });
     });
@@ -500,7 +504,9 @@ function setupAgent(app, server) {
 
         const agent = agents.get(id);
         if (agent) {
-            agent.chatHistory.length = 0;
+            agent.chatHistory = agent.config.greeting
+                ? [{ role: 'assistant', content: agent.config.greeting }]
+                : [];
             log(agent, 'chat', 'system', 'Chat history cleared');
         }
         res.json({ success: true });
