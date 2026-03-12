@@ -215,6 +215,7 @@ let deployed = false;
 let chatEnabled = false;
 let logSource = null;
 let rawCodeText = '';
+let deployedConfigSnapshot = null;
 
 // ============================================================================
 // Template handling
@@ -252,6 +253,14 @@ function applyTemplate(templateId) {
 // ============================================================================
 // Config helpers
 // ============================================================================
+
+function checkUnsavedChanges() {
+    if (!deployed || !deployedConfigSnapshot) return;
+    const current = JSON.stringify(getConfig());
+    const hasChanges = current !== deployedConfigSnapshot;
+    els.deployBtn.classList.toggle('unsaved', hasChanges);
+    els.deployBtn.textContent = hasChanges ? 'Re-Deploy Agent *' : 'Re-Deploy Agent';
+}
 
 function getConfig() {
     const provider = els.ttsProvider.value;
@@ -618,9 +627,11 @@ async function deploy() {
 
         deployed = true;
         chatEnabled = true;
+        deployedConfigSnapshot = JSON.stringify(config);
 
         // Update UI
         els.deployBtn.textContent = 'Re-Deploy Agent';
+        els.deployBtn.classList.remove('unsaved');
         els.deployBtn.classList.add('deployed');
         els.statusBadge.textContent = 'Live';
         els.statusBadge.classList.add('active');
@@ -1068,6 +1079,7 @@ async function init() {
             if (isDeployed) {
                 deployed = true;
                 chatEnabled = true;
+                deployedConfigSnapshot = JSON.stringify(getConfig());
                 els.deployBtn.textContent = 'Re-Deploy Agent';
                 els.deployBtn.classList.add('deployed');
                 els.statusBadge.textContent = 'Live';
@@ -1096,8 +1108,8 @@ async function init() {
     ];
 
     settingsInputs.forEach(el => {
-        el.addEventListener('input', () => { updateCodePreview(); saveSettings(); });
-        el.addEventListener('change', () => { updateCodePreview(); saveSettings(); });
+        el.addEventListener('input', () => { updateCodePreview(); saveSettings(); checkUnsavedChanges(); });
+        el.addEventListener('change', () => { updateCodePreview(); saveSettings(); checkUnsavedChanges(); });
     });
 
     els.ttsProvider.addEventListener('change', updateVoiceOptions);
