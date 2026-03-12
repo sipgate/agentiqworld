@@ -436,6 +436,8 @@ function createHomepageApp() {
   // Mount webapp at path if WEBAPP_PORT is empty
   if (!WEBAPP_PORT && WEBAPP_PATH !== '/') {
     originalConsole.log(`Mounting webapp at ${WEBAPP_PATH}`);
+    // Redirect /app to /app/ so relative asset paths resolve correctly
+    app.get(WEBAPP_PATH, (req, res) => res.redirect(301, `${WEBAPP_PATH}/`));
     app.use(WEBAPP_PATH, express.static(path.join(__dirname, '../webapp')));
     app.get(`${WEBAPP_PATH}/*`, (req, res) => res.sendFile(path.join(__dirname, '../webapp/index.html')));
   }
