@@ -452,12 +452,16 @@ function createHomepageApp() {
     app.use(ADMIN_PATH, createAdminRouter());
   }
 
+  // NOTE: homepage static files and catch-all are added by finalizeHomepage()
+  // AFTER setupAgent() so that /api/agent/* routes take priority.
+  return app;
+}
+
+function finalizeHomepage(app) {
   app.use(express.static(path.join(__dirname, '../homepage')));
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../homepage/index.html'), err => { if (err) res.status(404).send('Page not found'); });
   });
-
-  return app;
 }
 
 function createWebappApp() {
@@ -520,6 +524,9 @@ if (!WEBAPP_PORT) {
   homepageApp.use(express.json());
   setupAgent(homepageApp, homepageServer);
 }
+
+// Finalize homepage AFTER agent routes so /api/agent/* takes priority over catch-all
+finalizeHomepage(homepageApp);
 
 homepageServer.listen(HOMEPAGE_PORT, () => {
   originalConsole.log(`Homepage server listening on port ${HOMEPAGE_PORT}`);
