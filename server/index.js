@@ -495,7 +495,11 @@ function createHomepageApp() {
     app.use(WEBAPP_PATH, express.static(path.join(__dirname, '../webapp')));
     const sendWebappHtml = (req, res) => res.type('html').send(webappHtml);
     app.get(WEBAPP_PATH, sendWebappHtml);
-    app.get(`${WEBAPP_PATH}/*`, sendWebappHtml);
+    app.get(`${WEBAPP_PATH}/*`, (req, res, next) => {
+      // Let /api/* routes fall through to handlers registered after this (agent, status stream, etc.)
+      if (req.path.startsWith('/api/')) return next();
+      sendWebappHtml(req, res);
+    });
   }
 
   // Mount admin at path if ADMIN_PORT is empty
