@@ -34,7 +34,7 @@ const adminApi = {
      * Check if admin is authenticated
      */
     isAuthenticated() {
-        return pb.authStore.isValid && pb.authStore.isAdmin;
+        return pb.authStore.isValid && pb.authStore.record?.collectionName === '_superusers';
     },
 
     /**
