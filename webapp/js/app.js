@@ -26,11 +26,11 @@ const AGENT_ID = getAgentId();
 const TEMPLATES = [
     {
         id: 'kundenservice',
-        name: 'Kundenservice',
-        description: 'Freundlicher Support-Agent für allgemeine Kundenanfragen',
+        name: 'Customer Service',
+        description: 'Friendly support agent for general customer inquiries',
         config: {
-            systemPrompt: `Du bist ein freundlicher Kundenservice-Mitarbeiter bei einem Telekommunikationsunternehmen. Du beantwortest Fragen zu Tarifen, Rechnungen und Vertragslaufzeiten. Bei komplexen Anliegen leitest du an die Fachabteilung weiter. Bleibe stets höflich, geduldig und lösungsorientiert. Fasse dich kurz, du sprichst am Telefon. Wenn du etwas nicht weißt, sag es ehrlich und biete an, einen Kollegen hinzuzuziehen. Verwende keine Emojis, keine Aufzählungen und keine Formatierung. Antworte in kurzen, natürlich klingenden Sätzen.`,
-            greeting: 'Hallo und willkommen bei unserem Kundenservice! Mein Name ist Halbot. Wie kann ich Ihnen heute helfen?',
+            systemPrompt: `You are a friendly customer service agent at a telecommunications company. You answer questions about plans, bills, and contract terms. For complex issues, you transfer the caller to the appropriate department. Always stay polite, patient, and solution-oriented. Keep it brief — you are speaking on the phone. If you do not know something, say so honestly and offer to bring in a colleague. Do not use emojis, bullet points, or any formatting. Reply in short, naturally flowing sentences.`,
+            greeting: 'Hello and welcome to our customer service! My name is Halbot. How can I help you today?',
             ttsProvider: 'azure',
             ttsVoice: 'de-DE-KatjaNeural',
             bargeIn: 'immediate',
@@ -40,11 +40,11 @@ const TEMPLATES = [
     },
     {
         id: 'terminvereinbarung',
-        name: 'Terminvereinbarung',
-        description: 'Agent zur strukturierten Terminbuchung',
+        name: 'Appointment Booking',
+        description: 'Agent for structured appointment scheduling',
         config: {
-            systemPrompt: `Du bist ein Terminplanungs-Assistent. Deine Aufgabe ist es, Termine mit Anrufern zu vereinbaren. Frage zuerst nach dem Grund des Termins, dann nach dem gewünschten Datum und der Uhrzeit, dann nach dem Namen des Anrufers. Fasse am Ende den Termin zusammen und bitte um Bestätigung. Termine sind nur Montag bis Freitag von neun bis siebzehn Uhr möglich. Wiederhole wichtige Details zur Bestätigung. Fasse dich kurz und sprich natürlich. Verwende keine Emojis, keine Aufzählungen und keine Formatierung.`,
-            greeting: 'Guten Tag! Sie sind mit der Terminvereinbarung verbunden. Für welchen Anlass möchten Sie einen Termin buchen?',
+            systemPrompt: `You are an appointment scheduling assistant. Your job is to book appointments with callers. First ask for the reason for the appointment, then the preferred date and time, then the caller's name. At the end, summarize the appointment and ask for confirmation. Appointments are available Monday through Friday from nine to five. Repeat important details to confirm. Keep it brief and speak naturally. Do not use emojis, bullet points, or any formatting.`,
+            greeting: 'Good day! You have reached our appointment booking line. What would you like to schedule an appointment for?',
             ttsProvider: 'azure',
             ttsVoice: 'de-DE-ConradNeural',
             bargeIn: 'minimum_characters',
@@ -54,11 +54,11 @@ const TEMPLATES = [
     },
     {
         id: 'bestellhotline',
-        name: 'Bestellhotline',
-        description: 'Verkaufsagent für Produktberatung und Bestellungen',
+        name: 'Order Hotline',
+        description: 'Sales agent for product advice and order taking',
         config: {
-            systemPrompt: `Du bist ein Verkaufsberater an einer Bestellhotline. Du berätst Kunden zu Produkten und Tarifen und hilfst bei der Auswahl des passenden Angebots. Du nimmst Bestellungen entgegen, also Name, Adresse und gewünschtes Produkt. Bei Bedarf machst du Upselling-Vorschläge, aber sei nicht aufdringlich. Sei professionell aber warmherzig. Stelle gezielte Fragen um den Bedarf zu verstehen. Fasse Bestelldetails immer zusammen bevor du bestätigst. Sprich kurz und natürlich, das ist ein Telefongespräch. Verwende keine Emojis, keine Aufzählungen und keine Formatierung.`,
-            greeting: 'Willkommen bei unserer Bestellhotline! Ich berate Sie gerne zu unseren Produkten. Wonach suchen Sie heute?',
+            systemPrompt: `You are a sales advisor on an order hotline. You advise customers on products and plans and help them find the right offer. You take orders, collecting name, address, and desired product. Make upselling suggestions when appropriate, but do not be pushy. Be professional but warm. Ask targeted questions to understand the customer's needs. Always summarize order details before confirming. Speak briefly and naturally — this is a phone call. Do not use emojis, bullet points, or any formatting.`,
+            greeting: 'Welcome to our order hotline! I am happy to help you with our products. What are you looking for today?',
             ttsProvider: 'azure',
             ttsVoice: 'de-DE-AmalaNeural',
             bargeIn: 'immediate',
@@ -68,11 +68,11 @@ const TEMPLATES = [
     },
     {
         id: 'techsupport',
-        name: 'Technischer Support',
-        description: 'IT-Helpdesk für Fehlerdiagnose und Problemlösung',
+        name: 'Technical Support',
+        description: 'IT helpdesk for troubleshooting and problem solving',
         config: {
-            systemPrompt: `Du bist ein technischer Support-Mitarbeiter. Deine Aufgabe ist es, Anrufern bei technischen Problemen zu helfen. Frage zuerst nach dem Problem und seit wann es besteht. Stelle dann gezielte Diagnosefragen zu Gerät, Betriebssystem und Fehlermeldung. Gib Anleitungen zur Lösung, aber immer nur einen Schritt auf einmal. Warte auf Rückmeldung bevor du weitermachst. Wenn das Problem nicht lösbar ist, leite an den Second-Level-Support weiter. Erkläre technische Begriffe verständlich. Bleib geduldig, auch wenn der Anrufer frustriert ist. Verwende keine Emojis, keine Aufzählungen und keine Formatierung. Antworte in kurzen, natürlich klingenden Sätzen.`,
-            greeting: 'Hallo, hier ist der technische Support! Schildern Sie mir bitte kurz Ihr Problem, dann schauen wir gemeinsam nach einer Lösung.',
+            systemPrompt: `You are a technical support agent. Your job is to help callers with technical problems. First ask about the issue and how long it has been occurring. Then ask targeted diagnostic questions about the device, operating system, and error message. Provide step-by-step instructions, but only one step at a time. Wait for feedback before continuing. If the problem cannot be resolved, escalate to second-level support. Explain technical terms in plain language. Stay patient, even if the caller is frustrated. Do not use emojis, bullet points, or any formatting. Reply in short, naturally flowing sentences.`,
+            greeting: 'Hello, this is technical support! Please briefly describe your issue and we will work on a solution together.',
             ttsProvider: 'azure',
             ttsVoice: 'de-DE-BerndNeural',
             bargeIn: 'none',
@@ -244,9 +244,9 @@ function applyTemplate(templateId) {
 
     if (resolvedModel !== c.llmModel) {
         const fallbackLabel = Object.values(LLM_MODELS).flatMap(d => d.models).find(m => m.value === resolvedModel)?.label || resolvedModel;
-        toast(`Template "${template.name}" geladen (Fallback: ${fallbackLabel})`, 'success');
+        toast(`Template "${template.name}" loaded (Fallback: ${fallbackLabel})`, 'success');
     } else {
-        toast(`Template "${template.name}" geladen`, 'success');
+        toast(`Template "${template.name}" loaded`, 'success');
     }
 }
 
@@ -332,7 +332,7 @@ function generateCode() {
             bargeInJson = '{ strategy: "immediate" }';
     }
 
-    const promptStr = escapeForTemplate(c.systemPrompt || 'Du bist ein hilfreicher Assistent.');
+    const promptStr = escapeForTemplate(c.systemPrompt || 'You are a helpful assistant.');
     const greetingStr = (c.greeting || '').replace(/"/g, '\\"');
 
     if (c.llmProvider === 'gemini') {
@@ -345,7 +345,7 @@ function generateAnthropicCode(c, ttsJson, bargeInJson, promptStr, greetingStr) 
     return `// -------------------------------------------------------
 // sipgate Flow Agent — Anthropic Claude
 // -------------------------------------------------------
-// Voraussetzungen:
+// Prerequisites:
 //   npm install @sipgate/ai-flow-sdk @anthropic-ai/sdk ws
 //   export ANTHROPIC_API_KEY="sk-ant-..."
 // -------------------------------------------------------
@@ -354,21 +354,21 @@ import { AiFlowAssistant } from "@sipgate/ai-flow-sdk";
 import Anthropic from "@anthropic-ai/sdk";
 import WebSocket from "ws";
 
-// --- LLM-Client (liest ANTHROPIC_API_KEY aus der Umgebung) ---
+// --- LLM client (reads ANTHROPIC_API_KEY from environment) ---
 const client = new Anthropic();
 
 const SYSTEM_PROMPT = \`${promptStr}\`;
 
-// Jeder Anruf bekommt eine eigene Session mit Chat-Verlauf
+// Each call gets its own session with chat history
 const sessions = new Map();
 
-// --- TTS- und Barge-In-Konfiguration ---
+// --- TTS and barge-in configuration ---
 const tts = ${ttsJson};
 const barge_in = ${bargeInJson};
 
-// --- Flow-Assistant mit Event-Handlern ---
+// --- Flow assistant with event handlers ---
 const assistant = AiFlowAssistant.create({
-  // Anruf startet: Begruessung senden
+  // Call starts: send greeting
   onSessionStart: async (event) => {
     sessions.set(event.session.id, [{ role: "assistant", content: "${greetingStr}" }]);
     return {
@@ -381,12 +381,12 @@ const assistant = AiFlowAssistant.create({
     };
   },
 
-  // Nutzer hat gesprochen: an Claude weiterleiten
+  // User spoke: forward to Claude
   onUserSpeak: async (event) => {
     const history = sessions.get(event.session.id) || [];
     history.push({ role: "user", content: event.text });
 
-    // Anfrage an Claude mit dem gesamten Gespraechsverlauf
+    // Send request to Claude with the full conversation history
     const response = await client.messages.create({
       model: "${c.model}",
       max_tokens: 300,
@@ -397,7 +397,7 @@ const assistant = AiFlowAssistant.create({
     const reply = response.content[0].text;
     history.push({ role: "assistant", content: reply });
 
-    // Antwort per TTS vorlesen lassen
+    // Read reply aloud via TTS
     return {
       type: "speak",
       session_id: event.session.id,
@@ -408,18 +408,18 @@ const assistant = AiFlowAssistant.create({
     };
   },
 
-  // Stille: Nutzer hat nicht geantwortet
+  // Silence: user did not respond
   onUserInputTimeout: async (event) => {
     return {
       type: "speak",
       session_id: event.session.id,
-      text: "Sind Sie noch da?",
+      text: "Are you still there?",
       user_input_timeout_seconds: ${c.timeout},
       tts,
     };
   },
 
-  // Anruf beendet: Session aufraeumen
+  // Call ended: clean up session
   onSessionEnd: async (event) => {
     sessions.delete(event.session.id);
     console.log("Call ended:", event.session.id);
@@ -443,7 +443,7 @@ function generateGeminiCode(c, ttsJson, bargeInJson, promptStr, greetingStr) {
     return `// -------------------------------------------------------
 // sipgate Flow Agent — Google Gemini
 // -------------------------------------------------------
-// Voraussetzungen:
+// Prerequisites:
 //   npm install @sipgate/ai-flow-sdk @google/generative-ai ws
 //   export GEMINI_API_KEY="AIza..."
 // -------------------------------------------------------
@@ -452,23 +452,23 @@ import { AiFlowAssistant } from "@sipgate/ai-flow-sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import WebSocket from "ws";
 
-// --- LLM-Client (liest GEMINI_API_KEY aus der Umgebung) ---
+// --- LLM client (reads GEMINI_API_KEY from environment) ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
   model: "${c.model}",
   systemInstruction: \`${promptStr}\`,
 });
 
-// Gemini verwaltet den Chat-Verlauf intern pro startChat()-Session
+// Gemini manages chat history internally per startChat() session
 const sessions = new Map();
 
-// --- TTS- und Barge-In-Konfiguration ---
+// --- TTS and barge-in configuration ---
 const tts = ${ttsJson};
 const barge_in = ${bargeInJson};
 
-// --- Flow-Assistant mit Event-Handlern ---
+// --- Flow assistant with event handlers ---
 const assistant = AiFlowAssistant.create({
-  // Anruf startet: Begruessung senden + Gemini-Chat-Session anlegen
+  // Call starts: send greeting + create Gemini chat session
   onSessionStart: async (event) => {
     sessions.set(event.session.id, model.startChat({
       history: [{ role: "model", parts: [{ text: "${greetingStr}" }] }],
@@ -483,15 +483,15 @@ const assistant = AiFlowAssistant.create({
     };
   },
 
-  // Nutzer hat gesprochen: an Gemini weiterleiten
+  // User spoke: forward to Gemini
   onUserSpeak: async (event) => {
     const chat = sessions.get(event.session.id);
 
-    // Gemini-Chat haelt den Verlauf automatisch
+    // Gemini chat keeps history automatically
     const result = await chat.sendMessage(event.text);
     const reply = result.response.text();
 
-    // Antwort per TTS vorlesen lassen
+    // Read reply aloud via TTS
     return {
       type: "speak",
       session_id: event.session.id,
@@ -502,18 +502,18 @@ const assistant = AiFlowAssistant.create({
     };
   },
 
-  // Stille: Nutzer hat nicht geantwortet
+  // Silence: user did not respond
   onUserInputTimeout: async (event) => {
     return {
       type: "speak",
       session_id: event.session.id,
-      text: "Sind Sie noch da?",
+      text: "Are you still there?",
       user_input_timeout_seconds: ${c.timeout},
       tts,
     };
   },
 
-  // Anruf beendet: Session aufraeumen
+  // Call ended: clean up session
   onSessionEnd: async (event) => {
     sessions.delete(event.session.id);
     console.log("Call ended:", event.session.id);
