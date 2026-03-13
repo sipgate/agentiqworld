@@ -463,6 +463,17 @@ function createAdminRouter() {
 function createHomepageApp() {
   const app = express();
 
+  // Request logging for analytics (covers all traffic in production single-port mode)
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      addLog(requestLogs, { method: req.method, path: req.path, status: res.statusCode, duration });
+      addAnalyticsEntry({ method: req.method, path: req.path, status: res.statusCode, duration, timestamp: Date.now() });
+    });
+    next();
+  });
+
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'homepage', timestamp: new Date().toISOString() });
   });
@@ -496,8 +507,9 @@ function createHomepageApp() {
     const sendWebappHtml = (req, res) => res.type('html').send(webappHtml);
     app.get(WEBAPP_PATH, sendWebappHtml);
     app.get(`${WEBAPP_PATH}/*`, (req, res, next) => {
-      // Let /api/* routes fall through to handlers registered after this (agent, status stream, etc.)
-      if (req.path.startsWith('/api/')) return next();
+      // Let /api/* sub-routes fall through to handlers registered after this (agent, status stream, etc.)
+      const subPath = req.path.slice(WEBAPP_PATH.length);
+      if (subPath.startsWith('/api/')) return next();
       sendWebappHtml(req, res);
     });
   }
@@ -594,7 +606,10 @@ const homepageServer = http.createServer(homepageApp);
 // If webapp is mounted on homepage (no separate port), attach agent to homepage server
 if (!WEBAPP_PORT) {
   homepageApp.use(express.json());
-  setupAgent(homepageApp, homepageServer);
+  // Mount agent routes under WEBAPP_PATH so relative URLs with <base href> resolve correctly
+  const agentRouter = express.Router();
+  setupAgent(agentRouter, homepageServer);
+  homepageApp.use(WEBAPP_PATH, agentRouter);
 
   homepageApp.get(`${WEBAPP_PATH}/api/status`, (req, res) => {
     res.json({ maintenance: maintenanceMode });
