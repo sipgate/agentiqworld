@@ -614,7 +614,7 @@ async function deploy() {
     els.deployBtn.textContent = 'Deploying...';
 
     try {
-        const res = await fetch(`/api/agent/${AGENT_ID}/config`, {
+        const res = await fetch(`api/agent/${AGENT_ID}/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(config)
@@ -684,7 +684,7 @@ async function sendChat(message) {
     scrollChat();
 
     try {
-        const res = await fetch(`/api/agent/${AGENT_ID}/chat`, {
+        const res = await fetch(`api/agent/${AGENT_ID}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
@@ -733,7 +733,7 @@ function clearChat() {
     els.chatMessages.innerHTML = '';
     if (deployed) {
         showGreeting();
-        fetch(`/api/agent/${AGENT_ID}/chat/reset`, { method: 'POST' });
+        fetch(`api/agent/${AGENT_ID}/chat/reset`, { method: 'POST' });
     } else {
         els.chatMessages.innerHTML = '<div class="chat-placeholder">Configure and deploy your agent to start chatting.</div>';
     }
@@ -749,7 +749,7 @@ function connectLogStream() {
         logSource.close();
     }
 
-    logSource = new EventSource(`/api/agent/${AGENT_ID}/logs`);
+    logSource = new EventSource(`api/agent/${AGENT_ID}/logs`);
 
     logSource.onmessage = (event) => {
         try {
@@ -905,7 +905,7 @@ function setMaintenanceMode(active) {
 }
 
 function connectStatusStream() {
-    const source = new EventSource('/api/status/stream');
+    const source = new EventSource('api/status/stream');
 
     source.onmessage = (event) => {
         try {
@@ -1079,7 +1079,7 @@ async function init() {
 
     // Check which API keys are configured and populate model dropdown
     try {
-        const res = await fetch('/api/agent/keys');
+        const res = await fetch('api/agent/keys');
         if (res.ok) {
             const keys = await res.json();
             serverKeys = { gemini: keys.gemini, anthropic: keys.anthropic };
@@ -1107,7 +1107,7 @@ async function init() {
 
     // Restore deployed state from server
     try {
-        const res = await fetch(`/api/agent/${AGENT_ID}/config`);
+        const res = await fetch(`api/agent/${AGENT_ID}/config`);
         if (res.ok) {
             const { deployed: isDeployed } = await res.json();
             if (isDeployed) {
