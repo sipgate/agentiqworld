@@ -122,6 +122,29 @@
                         </div>
                     </div>
 
+                    <!-- User Interface Control Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>User Interface</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="metrics-grid">
+                                <div class="metric">
+                                    <span class="metric-label">Status</span>
+                                    <span id="maintenance-status" class="metric-value">--</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Connected Users</span>
+                                    <span id="maintenance-users" class="metric-value">--</span>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;margin-top:12px;">
+                                <button id="maintenance-off-btn" class="btn btn-primary btn-sm">Enable Interface</button>
+                                <button id="maintenance-on-btn" class="btn btn-sm" style="color:#c0392b;border-color:#c0392b;">Disable Interface</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Services Status Card -->
                     <div class="card">
                         <div class="card-header">

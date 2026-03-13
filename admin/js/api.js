@@ -167,6 +167,27 @@ const adminApi = {
         return `${ADMIN_API_BASE}/api/backups/${encodeURIComponent(key)}/download`;
     },
 
+    /**
+     * Get maintenance status
+     */
+    async getMaintenance() {
+        return this.request('/api/maintenance');
+    },
+
+    /**
+     * Enable maintenance mode (disables user interface)
+     */
+    async setMaintenanceOn() {
+        return this.request('/api/maintenance/on', { method: 'POST' });
+    },
+
+    /**
+     * Disable maintenance mode (re-enables user interface)
+     */
+    async setMaintenanceOff() {
+        return this.request('/api/maintenance/off', { method: 'POST' });
+    },
+
     // Log streaming
     _logStreamEventSource: null,
     _logStreamCallbacks: new Set(),

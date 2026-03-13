@@ -16,6 +16,10 @@ const loginError = document.getElementById('login-error');
 const logoutBtn = document.getElementById('logout-btn');
 const adminEmailEl = document.getElementById('admin-email');
 
+// Maintenance control elements
+const maintenanceOnBtn = document.getElementById('maintenance-on-btn');
+const maintenanceOffBtn = document.getElementById('maintenance-off-btn');
+
 // Refresh buttons
 const refreshSystemBtn = document.getElementById('refresh-system');
 const refreshServicesBtn = document.getElementById('refresh-services');
@@ -542,6 +546,41 @@ async function loadLogs() {
 }
 
 /**
+ * Load maintenance status
+ */
+async function loadMaintenance() {
+    try {
+        const data = await adminApi.getMaintenance();
+        const statusEl = document.getElementById('maintenance-status');
+        const usersEl = document.getElementById('maintenance-users');
+        if (statusEl) {
+            statusEl.textContent = data.maintenance ? 'Disabled' : 'Active';
+            statusEl.style.color = data.maintenance ? '#c0392b' : '';
+        }
+        if (usersEl) usersEl.textContent = data.connectedUsers;
+    } catch (error) {
+        console.error('Failed to load maintenance status:', error);
+    }
+}
+
+/**
+ * Toggle maintenance mode
+ */
+async function setMaintenance(on) {
+    try {
+        if (on) {
+            await adminApi.setMaintenanceOn();
+        } else {
+            await adminApi.setMaintenanceOff();
+        }
+        await loadMaintenance();
+    } catch (error) {
+        console.error('Failed to set maintenance mode:', error);
+        alert('Failed to set maintenance mode: ' + error.message);
+    }
+}
+
+/**
  * Load all dashboard data
  */
 async function loadDashboard() {
@@ -552,7 +591,8 @@ async function loadDashboard() {
         loadCollections(),
         loadEnvironment(),
         loadBackups(),
-        loadLogs()
+        loadLogs(),
+        loadMaintenance()
     ]);
 }
 
@@ -648,6 +688,13 @@ function init() {
     }
     if (createBackupBtn) {
         createBackupBtn.addEventListener('click', createBackup);
+    }
+
+    if (maintenanceOnBtn) {
+        maintenanceOnBtn.addEventListener('click', () => setMaintenance(true));
+    }
+    if (maintenanceOffBtn) {
+        maintenanceOffBtn.addEventListener('click', () => setMaintenance(false));
     }
 
     // Analytics period change

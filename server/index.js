@@ -62,6 +62,17 @@ function broadcastLog(type, data) {
   });
 }
 
+// Maintenance mode
+let maintenanceMode = false;
+const webappClients = new Set();
+
+function broadcastToWebapp(type, data) {
+  const message = JSON.stringify({ type, data, timestamp: new Date().toISOString() });
+  webappClients.forEach(client => {
+    client.write(`data: ${message}\n\n`);
+  });
+}
+
 // Capture application logs
 const originalConsole = {
   log: console.log,
@@ -397,6 +408,24 @@ function createAdminRouter() {
     res.redirect(`${API_URL}/api/backups/${encodeURIComponent(req.params.key)}`);
   });
 
+  router.get('/api/maintenance', requireAdminAuth, (req, res) => {
+    res.json({ maintenance: maintenanceMode, connectedUsers: webappClients.size });
+  });
+
+  router.post('/api/maintenance/on', requireAdminAuth, (req, res) => {
+    maintenanceMode = true;
+    broadcastToWebapp('maintenance', { active: true });
+    originalConsole.log('Maintenance mode enabled by admin');
+    res.json({ maintenance: maintenanceMode, connectedUsers: webappClients.size });
+  });
+
+  router.post('/api/maintenance/off', requireAdminAuth, (req, res) => {
+    maintenanceMode = false;
+    broadcastToWebapp('maintenance', { active: false });
+    originalConsole.log('Maintenance mode disabled by admin');
+    res.json({ maintenance: maintenanceMode, connectedUsers: webappClients.size });
+  });
+
   router.use(express.static(path.join(__dirname, '../admin')));
   router.get('*', (req, res) => res.sendFile(path.join(__dirname, '../admin/index.html')));
 
@@ -472,6 +501,21 @@ function createWebappApp() {
     res.json({ status: 'ok', service: 'webapp', timestamp: new Date().toISOString() });
   });
 
+  app.get('/api/status', (req, res) => {
+    res.json({ maintenance: maintenanceMode });
+  });
+
+  app.get('/api/status/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.write(`data: ${JSON.stringify({ type: 'connected', maintenance: maintenanceMode, timestamp: new Date().toISOString() })}\n\n`);
+    webappClients.add(res);
+    const pingInterval = setInterval(() => res.write(`data: ${JSON.stringify({ type: 'ping', timestamp: new Date().toISOString() })}\n\n`), 30000);
+    req.on('close', () => { clearInterval(pingInterval); webappClients.delete(res); });
+  });
+
   // NOTE: static files and catch-all are added AFTER setupAgent()
   // so that /api/agent/* routes take priority over the SPA fallback.
   return app;
@@ -523,6 +567,21 @@ const homepageServer = http.createServer(homepageApp);
 if (!WEBAPP_PORT) {
   homepageApp.use(express.json());
   setupAgent(homepageApp, homepageServer);
+
+  homepageApp.get(`${WEBAPP_PATH}/api/status`, (req, res) => {
+    res.json({ maintenance: maintenanceMode });
+  });
+
+  homepageApp.get(`${WEBAPP_PATH}/api/status/stream`, (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.write(`data: ${JSON.stringify({ type: 'connected', maintenance: maintenanceMode, timestamp: new Date().toISOString() })}\n\n`);
+    webappClients.add(res);
+    const pingInterval = setInterval(() => res.write(`data: ${JSON.stringify({ type: 'ping', timestamp: new Date().toISOString() })}\n\n`), 30000);
+    req.on('close', () => { clearInterval(pingInterval); webappClients.delete(res); });
+  });
 }
 
 // Finalize homepage AFTER agent routes so /api/agent/* takes priority over catch-all

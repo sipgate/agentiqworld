@@ -891,6 +891,40 @@ function clearLogs() {
 }
 
 // ============================================================================
+// Maintenance mode
+// ============================================================================
+
+const maintenanceOverlay = document.getElementById('maintenance-overlay');
+
+function setMaintenanceMode(active) {
+    if (active) {
+        maintenanceOverlay.style.display = 'flex';
+    } else {
+        maintenanceOverlay.style.display = 'none';
+    }
+}
+
+function connectStatusStream() {
+    const source = new EventSource('/api/status/stream');
+
+    source.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'connected') {
+                setMaintenanceMode(data.maintenance);
+            } else if (data.type === 'maintenance') {
+                setMaintenanceMode(data.data.active);
+            }
+        } catch {}
+    };
+
+    source.onerror = () => {
+        setTimeout(connectStatusStream, 5000);
+        source.close();
+    };
+}
+
+// ============================================================================
 // Utilities
 // ============================================================================
 
@@ -1166,6 +1200,9 @@ async function init() {
 
     // Initial code preview
     updateCodePreview();
+
+    // Connect to maintenance/status stream
+    connectStatusStream();
 }
 
 document.addEventListener('DOMContentLoaded', init);
