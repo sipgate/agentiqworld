@@ -341,6 +341,25 @@ async function deleteBackup(token, key) {
 function createAdminRouter() {
   const router = express.Router();
 
+  // Proxy /pb/* → PocketBase so the browser can reach it regardless of port
+  router.all('/pb/*', (req, res) => {
+    const targetPath = req.path.replace(/^\/pb/, '');
+    const proxyReq = http.request({
+      hostname: 'localhost',
+      port: 8090,
+      path: targetPath + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''),
+      method: req.method,
+      headers: { ...req.headers, host: 'localhost:8090' }
+    }, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+    });
+    proxyReq.on('error', () => {
+      if (!res.headersSent) res.status(502).json({ error: 'PocketBase unreachable' });
+    });
+    req.pipe(proxyReq);
+  });
+
   router.get('/health', corsForHealth, (req, res) => {
     res.json({ status: 'ok', service: 'admin', timestamp: new Date().toISOString() });
   });

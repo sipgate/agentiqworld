@@ -4,7 +4,7 @@
  */
 
 // API URLs
-const PB_URL = window.API_URL || 'http://localhost:8090';
+const PB_URL = window.API_URL || '/pb';
 const ADMIN_API_BASE = window.ADMIN_API_BASE || '';  // Same origin, or set explicitly
 
 // Initialize PocketBase for admin auth
