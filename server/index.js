@@ -360,6 +360,11 @@ function createAdminRouter() {
     req.pipe(proxyReq);
   });
 
+  router.get('/config.js', (req, res) => {
+    res.type('application/javascript');
+    res.send(`window.ADMIN_API_BASE = ${JSON.stringify(req.baseUrl)};`);
+  });
+
   router.get('/health', corsForHealth, (req, res) => {
     res.json({ status: 'ok', service: 'admin', timestamp: new Date().toISOString() });
   });
